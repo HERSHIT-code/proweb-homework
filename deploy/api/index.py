@@ -13,11 +13,16 @@ import datetime as dt
 import json
 import os
 import re
+import sqlite3
+import tempfile
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 
 TURSO_URL = os.environ.get("TURSO_URL", "").rstrip("/")
 TURSO_TOKEN = os.environ.get("TURSO_TOKEN", "")
+
+_DB_PATH = os.environ.get("SQLITE_PATH") or os.path.join(tempfile.gettempdir(), "habitflow.db")
+_SCHEMA_READY = False
 
 DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 HABIT_RE = re.compile(r"^/api/habits/(\d+)$")
@@ -68,9 +73,32 @@ def _unval(cell):
     return cell.get("value")
 
 
+def _sqlite_sql(stmt: str, args=()):
+    """Fallback: локальный SQLite в /tmp, когда Turso не настроен.
+
+    Нужен только для демо-деплоя без облачной БД — данные живут до перезапуска
+    инстанса. Как только заданы TURSO_URL/TURSO_TOKEN, используется Turso.
+    """
+    global _SCHEMA_READY
+    conn = sqlite3.connect(_DB_PATH, timeout=10)
+    conn.row_factory = sqlite3.Row
+    try:
+        if not _SCHEMA_READY:
+            for st in SCHEMA:
+                conn.execute(st)
+            conn.commit()
+            _SCHEMA_READY = True
+        cur = conn.execute(stmt, tuple(args))
+        rows = [dict(r) for r in cur.fetchall()] if cur.description else []
+        conn.commit()
+        return rows
+    finally:
+        conn.close()
+
+
 def sql(stmt: str, args=()):
     if not (TURSO_URL and TURSO_TOKEN):
-        raise RuntimeError("TURSO_URL / TURSO_TOKEN не заданы в переменных окружения")
+        return _sqlite_sql(stmt, args)
     payload = {"requests": [{"type": "execute", "stmt": {"sql": stmt,
                                                          "args": [_val(a) for a in args]}},
                             {"type": "close"}]}
