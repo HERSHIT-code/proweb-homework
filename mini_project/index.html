@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Focus Timer — мини-проект</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#161b23; --line:#242c38;
+    --fg:#e8edf5; --muted:#8b98ab; --accent:#4ade80; --accent2:#38bdf8; --danger:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 600px at 50% -10%, #1b2534 0%, var(--bg) 60%);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--fg);padding:24px;
+  }
+  .app{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);
+       border-radius:24px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  h1{font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:center}
+  .modes{display:flex;gap:8px;margin:20px 0 22px}
+  .modes button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);
+    background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.18s}
+  .modes button:hover{color:var(--fg);border-color:#39465a}
+  .modes button.on{background:#1f2a36;color:var(--fg);border-color:#3b4d64}
+  .dial{position:relative;width:240px;height:240px;margin:0 auto}
+  .dial svg{transform:rotate(-90deg)}
+  .dial .track{stroke:#1e2731}
+  .dial .bar{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .35s linear,stroke .3s}
+  .time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #clock{font-size:48px;font-variant-numeric:tabular-nums;letter-spacing:1px;font-weight:300}
+  #phase{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .ctrl{display:flex;gap:10px;margin-top:26px}
+  .ctrl button{flex:1;padding:14px;border-radius:14px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:.18s}
+  #start{background:var(--accent);color:#06210f}
+  #start:hover{filter:brightness(1.08)}
+  #reset{background:#1d2530;color:var(--fg);border:1px solid var(--line)}
+  #reset:hover{background:#243040}
+  .tasks{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
+  .tasks h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .row{display:flex;gap:8px}
+  input[type=text]{flex:1;padding:11px 13px;border-radius:11px;border:1px solid var(--line);
+    background:#111720;color:var(--fg);font-size:13px;outline:none}
+  input[type=text]:focus{border-color:#3b4d64}
+  #add{padding:0 16px;border-radius:11px;border:none;background:var(--accent2);color:#05202b;font-weight:800;cursor:pointer}
+  ul{list-style:none;margin-top:12px;max-height:150px;overflow:auto}
+  li{display:flex;align-items:center;gap:10px;padding:9px 2px;font-size:13px;border-bottom:1px solid #1b2330}
+  li:last-child{border:none}
+  li.done span{text-decoration:line-through;color:#5d6a7c}
+  li input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+  li button{margin-left:auto;background:none;border:none;color:#4b5768;cursor:pointer;font-size:15px}
+  li button:hover{color:var(--danger)}
+  .stat{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Focus Timer</h1>
+
+  <div class="modes" id="modes">
+    <button data-min="25" class="on">Работа 25</button>
+    <button data-min="5">Перерыв 5</button>
+    <button data-min="15">Длинный 15</button>
+  </div>
+
+  <div class="dial">
+    <svg width="240" height="240" viewBox="0 0 240 240">
+      <circle class="track" cx="120" cy="120" r="104" fill="none" stroke-width="12"/>
+      <circle class="bar" id="bar" cx="120" cy="120" r="104" fill="none" stroke-width="12"
+              stroke-dasharray="653.45" stroke-dashoffset="0"/>
+    </svg>
+    <div class="time">
+      <div id="clock">25:00</div>
+      <div id="phase">готов к старту</div>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <button id="start">Старт</button>
+    <button id="reset">Сброс</button>
+  </div>
+
+  <div class="tasks">
+    <h2>Задачи на сессию</h2>
+    <div class="row">
+      <input id="task" type="text" placeholder="Что делаем?" maxlength="80" />
+      <button id="add">+</button>
+    </div>
+    <ul id="list"></ul>
+    <div class="stat" id="stat">Сессий завершено: 0</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const CIRC = 2 * Math.PI * 104;
+  const clock = document.getElementById('clock');
+  const phase = document.getElementById('phase');
+  const bar = document.getElementById('bar');
+  const startBtn = document.getElementById('start');
+  const resetBtn = document.getElementById('reset');
+  const modes = document.getElementById('modes');
+
+  let total = 25 * 60;
+  let left = total;
+  let timer = null;
+  let running = false;
+  let sessions = Number(localStorage.getItem('ft_sessions') || 0);
+
+  document.getElementById('stat').textContent = 'Сессий завершено: ' + sessions;
+
+  function paint() {
+    const m = Math.floor(left / 60), s = left % 60;
+    clock.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    const done = 1 - left / total;
+    bar.style.strokeDasharray = CIRC;
+    bar.style.strokeDashoffset = CIRC * done;
+    document.title = running ? clock.textContent + ' — Focus Timer' : 'Focus Timer';
+  }
+
+  function setMode(min, btn) {
+    stop();
+    total = min * 60;
+    left = total;
+    phase.textContent = 'готов к старту';
+    [...modes.children].forEach(b => b.classList.toggle('on', b === btn));
+    paint();
+  }
+
+  function beep() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      [0, .18, .36].forEach((t, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = 660 + i * 120;
+        o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(.14, ac.currentTime + t);
+        o.start(ac.currentTime + t);
+        o.stop(ac.currentTime + t + .12);
+      });
+    } catch (e) {}
+  }
+
+  function stop() {
+    clearInterval(timer);
+    timer = null;
+    running = false;
+    startBtn.textContent = 'Старт';
+  }
+
+  function tick() {
+    left--;
+    if (left <= 0) {
+      stop();
+      left = 0;
+      paint();
+      phase.textContent = 'сессия завершена';
+      sessions++;
+      localStorage.setItem('ft_sessions', sessions);
+      document.getElementById('stat').textContent = 'Сессий завершено: ' + sessions;
+      beep();
+      return;
+    }
+    paint();
+  }
+
+  startBtn.onclick = () => {
+    if (running) { stop(); phase.textContent = 'пауза'; return; }
+    running = true;
+    startBtn.textContent = 'Пауза';
+    phase.textContent = 'в работе';
+    timer = setInterval(tick, 1000);
+    paint();
+  };
+
+  resetBtn.onclick = () => { stop(); left = total; phase.textContent = 'готов к старту'; paint(); };
+
+  modes.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) setMode(Number(b.dataset.min), b);
+  });
+
+  // ---- задачи ----
+  const list = document.getElementById('list');
+  const input = document.getElementById('task');
+  let tasks = JSON.parse(localStorage.getItem('ft_tasks') || '[]');
+
+  function saveTasks() { localStorage.setItem('ft_tasks', JSON.stringify(tasks)); }
+
+  function render() {
+    list.innerHTML = '';
+    tasks.forEach((t, i) => {
+      const li = document.createElement('li');
+      if (t.done) li.classList.add('done');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = t.done;
+      cb.onchange = () => { tasks[i].done = cb.checked; saveTasks(); render(); };
+      const sp = document.createElement('span');
+      sp.textContent = t.text;
+      const del = document.createElement('button');
+      del.textContent = '×';
+      del.onclick = () => { tasks.splice(i, 1); saveTasks(); render(); };
+      li.append(cb, sp, del);
+      list.appendChild(li);
+    });
+  }
+
+  function addTask() {
+    const v = input.value.trim();
+    if (!v) return;
+    tasks.push({ text: v, done: false });
+    input.value = '';
+    saveTasks();
+    render();
+  }
+
+  document.getElementById('add').onclick = addTask;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); startBtn.click(); }
+  });
+
+  render();
+  paint();
+})();
+</script>
+</body>
+</html>

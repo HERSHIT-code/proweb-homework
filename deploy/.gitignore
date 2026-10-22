@@ -1,0 +1,6 @@
+.env
+.env.local
+habits.db
+__pycache__/
+.vercel
+node_modules/

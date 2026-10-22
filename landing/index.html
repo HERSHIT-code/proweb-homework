@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KofeLab — кофейня медленного утра</title>
+<meta name="description" content="KofeLab — обжарка на месте, завтраки до 14:00 и подписка на кофе." />
+<style>
+  :root{
+    --bg:#0f0b09; --panel:#171110; --line:#2a1f1b; --fg:#f6efe8; --muted:#b3a196;
+    --accent:#e0a26a; --accent-d:#c98443;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
+  .wrap{width:min(1120px,92%);margin:0 auto}
+  header{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);background:rgba(15,11,9,.78);border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;gap:28px;padding:16px 0}
+  .logo{font-weight:800;letter-spacing:.16em;font-size:15px;text-transform:uppercase}
+  .logo span{color:var(--accent)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px;transition:.2s}
+  nav a:hover{color:var(--fg)}
+  .nav-cta{margin-left:auto}
+  .btn{display:inline-block;padding:13px 24px;border-radius:999px;border:none;cursor:pointer;
+       font-size:14px;font-weight:700;text-decoration:none;transition:.2s}
+  .btn-primary{background:var(--accent);color:#20130a}
+  .btn-primary:hover{background:#f0b47f;transform:translateY(-1px)}
+  .btn-ghost{border:1px solid var(--line);color:var(--fg);background:transparent}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* HERO */
+  .hero{position:relative;overflow:hidden;padding:96px 0 80px}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:520px;
+    background:radial-gradient(closest-side,rgba(224,162,106,.20),transparent 70%)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;position:relative}
+  .tag{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+       border:1px solid var(--line);font-size:12px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(38px,5.4vw,64px);line-height:1.06;letter-spacing:-.02em;margin:22px 0 18px;font-weight:800}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lead{color:var(--muted);font-size:17px;max-width:520px}
+  .hero-actions{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+  .stats{display:flex;gap:34px;margin-top:44px;flex-wrap:wrap}
+  .stat b{display:block;font-size:26px}
+  .stat span{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .cup{position:relative;aspect-ratio:1/1;border-radius:28px;border:1px solid var(--line);
+       background:linear-gradient(160deg,#2a1c15,#120d0b 60%);display:grid;place-items:center;overflow:hidden}
+  .cup::before{content:"";position:absolute;inset:0;
+    background:conic-gradient(from 210deg at 30% 20%,rgba(224,162,106,.28),transparent 45%)}
+  .cup svg{width:66%;position:relative;filter:drop-shadow(0 18px 30px rgba(0,0,0,.6))}
+
+  /* SERVICES */
+  section{padding:76px 0}
+  .sec-head{max-width:620px;margin-bottom:40px}
+  .sec-head h2{font-size:clamp(26px,3.4vw,38px);letter-spacing:-.01em;margin:12px 0 10px}
+  .sec-head p{color:var(--muted)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px;
+        display:flex;flex-direction:column;gap:12px;transition:.22s}
+  .card:hover{transform:translateY(-4px);border-color:#3a2a23}
+  .card .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(224,162,106,.12);color:var(--accent);font-size:20px}
+  .card h3{font-size:18px}
+  .card p{color:var(--muted);font-size:14px;flex:1}
+  .price{font-size:20px;font-weight:800;color:var(--accent);padding-top:8px;border-top:1px solid var(--line)}
+  .price small{color:var(--muted);font-weight:500;font-size:12px}
+
+  /* FORM */
+  .form-box{display:grid;grid-template-columns:.9fr 1.1fr;gap:44px;align-items:start;
+    background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:clamp(24px,4vw,44px)}
+  .form-box ul{list-style:none;margin-top:22px;display:grid;gap:12px;color:var(--muted);font-size:14px}
+  .form-box li::before{content:"—";color:var(--accent);margin-right:10px}
+  form{display:grid;gap:14px}
+  label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  input,select,textarea{width:100%;padding:13px 15px;border-radius:12px;border:1px solid var(--line);
+    background:#100c0b;color:var(--fg);font-size:14px;font-family:inherit;outline:none;transition:.18s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:88px}
+  .field{display:grid;gap:7px}
+  .note{font-size:12px;color:var(--muted)}
+  .ok{display:none;padding:13px 15px;border-radius:12px;background:rgba(74,222,128,.12);
+      border:1px solid rgba(74,222,128,.35);color:#9df3b8;font-size:13px}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:13px;
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  @media (max-width:900px){
+    .hero-grid,.form-box{grid-template-columns:1fr}
+    .cards{grid-template-columns:1fr}
+    nav{gap:16px;flex-wrap:wrap}
+    nav a:not(.btn){display:none}
+    .cup{order:-1;max-width:340px;margin:0 auto}
+    .hero{padding:56px 0 48px}
+    section{padding:56px 0}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo">Kofe<span>Lab</span></div>
+      <a href="#services">Меню</a>
+      <a href="#why">О нас</a>
+      <a href="#order">Заявка</a>
+      <a class="btn btn-primary nav-cta" href="#order">Забронировать стол</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="tag">Обжарка на месте · с 2019</span>
+        <h1>Кофе, который<br /><em>не торопится</em></h1>
+        <p class="lead">Медленное утро в центре города: свежая обжарка каждую неделю, завтраки до 14:00
+          и подписка на кофе, которая экономит до 30 %.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#order">Оставить заявку</a>
+          <a class="btn btn-ghost" href="#services">Смотреть меню</a>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>12</b><span>сортов зерна</span></div>
+          <div class="stat"><b>4.9</b><span>рейтинг гостей</span></div>
+          <div class="stat"><b>7 мин</b><span>средняя подача</span></div>
+        </div>
+      </div>
+      <div class="cup" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none">
+          <path d="M40 70h100v55a45 45 0 0 1-45 45H85a45 45 0 0 1-45-45V70Z" fill="#e0a26a"/>
+          <path d="M140 84h14a22 22 0 0 1 0 44h-14" stroke="#e0a26a" stroke-width="11" stroke-linecap="round"/>
+          <path d="M60 40c0-10 10-12 10-22M88 40c0-10 10-12 10-22M116 40c0-10 10-12 10-22"
+                stroke="#c98443" stroke-width="7" stroke-linecap="round"/>
+          <ellipse cx="90" cy="70" rx="50" ry="9" fill="#c98443"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="services">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="tag">Услуги и цены</span>
+        <h2>Всё, за чем возвращаются</h2>
+        <p>Напитки на альтернативе и эспрессо, десерты собственной пекарни и подписка для тех, кто заходит каждый день.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="ico">☕</div>
+          <h3>Фильтр и эспрессо</h3>
+          <p>V60, аэропресс, флэт-уайт на зерне недели. Молоко — овсяное, миндальное, обычное.</p>
+          <div class="price">22 000 сум <small>/ чашка</small></div>
+        </article>
+        <article class="card">
+          <div class="ico">🥐</div>
+          <h3>Завтраки до 14:00</h3>
+          <p>Круассаны на французском масле, сырники, скрэмбл на бриоши и безглютеновые боулы.</p>
+          <div class="price">38 000 сум <small>/ сет</small></div>
+        </article>
+        <article class="card">
+          <div class="ico">🎫</div>
+          <h3>Подписка KofeLab+</h3>
+          <p>Одна чашка в день, скидка 10 % на десерты и бронь столика без ожидания.</p>
+          <div class="price">420 000 сум <small>/ месяц</small></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap">
+      <div class="form-box">
+        <div>
+          <span class="tag">Почему мы</span>
+          <h2 style="font-size:clamp(24px,3vw,34px);margin:14px 0 8px">Обжарка в зале, а не на складе</h2>
+          <p style="color:var(--muted)">Зерно приезжает зелёным и обжаривается маленькими партиями прямо у бара —
+            поэтому дата обжарки всегда свежая.</p>
+          <ul>
+            <li>Своя пекарня, всё выпекается утром</li>
+            <li>Зерно на вынос — с датой обжарки</li>
+            <li>Wi-Fi, розетки и тихая зона для работы</li>
+          </ul>
+        </div>
+        <div id="order">
+          <h2 style="font-size:22px;margin-bottom:6px">Заявка на стол или подписку</h2>
+          <p class="note" style="margin-bottom:18px">Ответим в течение 15 минут в рабочее время.</p>
+          <form id="lead" novalidate>
+            <div class="field">
+              <label for="name">Имя</label>
+              <input id="name" name="name" type="text" placeholder="Как к вам обращаться" required />
+            </div>
+            <div class="field">
+              <label for="phone">Телефон</label>
+              <input id="phone" name="phone" type="tel" placeholder="+998 __ ___ __ __" required />
+            </div>
+            <div class="field">
+              <label for="what">Что нужно</label>
+              <select id="what" name="service">
+                <option>Бронь столика</option>
+                <option>Подписка KofeLab+</option>
+                <option>Заказ на вынос</option>
+                <option>Мероприятие / кофе-брейк</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="msg">Комментарий</label>
+              <textarea id="msg" name="message" placeholder="Дата, время, количество гостей"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Отправить заявку</button>
+            <div class="ok" id="ok">Спасибо! Заявка сохранена — мы позвоним для подтверждения.</div>
+            <p class="note">Нажимая кнопку, вы соглашаетесь на обработку персональных данных.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>© 2026 KofeLab · ул. Амира Темура, 12</span>
+  <span>Пн–Пт 8:00–21:00 · Сб–Вс 9:00–22:00 · +998 71 200 00 00</span>
+</footer>
+
+<script>
+  // демо-логика формы: валидация + сохранение заявки в localStorage
+  const form = document.getElementById('lead');
+  const ok = document.getElementById('ok');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = form.name.value.trim();
+    const phone = form.phone.value.trim();
+    if (name.length < 2 || phone.replace(/\D/g, '').length < 9) {
+      alert('Заполните имя и корректный номер телефона.');
+      return;
+    }
+    const leads = JSON.parse(localStorage.getItem('kofelab_leads') || '[]');
+    leads.push({ name, phone, service: form.service.value, message: form.message.value, at: new Date().toISOString() });
+    localStorage.setItem('kofelab_leads', JSON.stringify(leads));
+    form.reset();
+    ok.style.display = 'block';
+    setTimeout(() => (ok.style.display = 'none'), 6000);
+  });
+</script>
+</body>
+</html>
